@@ -19,7 +19,7 @@ def get_argparser():
                         help="print the ARTIQ version number")
 
     common_args.verbosity_args(parser)
-    parser.add_argument("--device-db", default="device_db.py",
+    parser.add_argument("--device-db", default=r"C:\Users\jarjarbinks\code\wax\wax\db\device_db.py",
                        help="device database file (default: '%(default)s')")
     parser.add_argument("-D", "--device", default=None,
                         help="use specified core device address instead of "
