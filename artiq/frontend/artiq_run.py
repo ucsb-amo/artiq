@@ -24,9 +24,10 @@ from artiq.compiler.embedding import EmbeddingMap
 from artiq.compiler import import_cache
 from artiq.tools import *
 
-
 logger = logging.getLogger(__name__)
 
+import os
+db_path = os.getenv('db')
 
 class StubObject:
     def __setattr__(self, name, value):
@@ -132,7 +133,7 @@ def get_argparser(with_file=True):
                         help="print the ARTIQ version number")
 
     common_args.verbosity_args(parser)
-    parser.add_argument("--device-db", default=r"C:\Users\jarjarbinks\code\k-exp\kexp\util\db\device_db.py",
+    parser.add_argument("--device-db", default=db_path,
                         help="device database file (default: '%(default)s')")
     parser.add_argument("--dataset-db", default="dataset_db.pyon",
                         help="dataset file (default: '%(default)s')")
