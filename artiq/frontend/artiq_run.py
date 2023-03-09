@@ -132,7 +132,7 @@ def get_argparser(with_file=True):
                         help="print the ARTIQ version number")
 
     common_args.verbosity_args(parser)
-    parser.add_argument("--device-db", default=r"C:\Users\jarjarbinks\code\wax\wax\db\device_db.py",
+    parser.add_argument("--device-db", default=r"C:\Users\jarjarbinks\code\k-exp\kexp\util\db\device_db.py",
                         help="device database file (default: '%(default)s')")
     parser.add_argument("--dataset-db", default="dataset_db.pyon",
                         help="dataset file (default: '%(default)s')")
