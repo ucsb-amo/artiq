@@ -726,7 +726,7 @@ class _DeviceManager:
                 logger.info("cancelled connection to moninj")
                 break
             except:
-                logger.error("failed to connect to moninj. Is aqctl_moninj_proxy running?", exc_info=True)
+                # logger.error("failed to connect to moninj. Is aqctl_moninj_proxy running?", exc_info=True)
                 await asyncio.sleep(10.)
                 self.reconnect_mi.set()
             else:
