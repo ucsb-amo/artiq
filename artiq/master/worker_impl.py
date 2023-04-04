@@ -350,8 +350,8 @@ def main():
                     exp_inst.analyze()
                     # browser's analyze shouldn't write results,
                     # since it doesn't run the experiment and cannot have rid
-                    if rid is not None:
-                        write_results()
+                    # if rid is not None:
+                    #     write_results()
                 finally:
                     put_completed()
             elif action == "examine":
