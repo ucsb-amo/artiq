@@ -359,7 +359,7 @@ def main():
                 except:
                     # Only write results in run() on failure; on success wait
                     # for end of analyze stage.
-                    write_results()
+                    # write_results()
                     raise
                 finally:
                     device_mgr.notify_run_end()
@@ -370,8 +370,8 @@ def main():
                 finally:
                     # browser's analyze shouldn't write results,
                     # since it doesn't run the experiment and cannot have rid
-                    if rid is not None:
-                        write_results()
+                    # if rid is not None:
+                    #     write_results()
 
                 put_completed()
             elif action == "examine":
