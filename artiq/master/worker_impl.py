@@ -367,7 +367,7 @@ def main():
                     except:
                         # Also write results immediately if the `notify_run_end`
                         # callbacks produce an exception
-                        write_results()
+                        # write_results()
                         raise
                 put_completed()
             elif action == "analyze":
@@ -378,7 +378,7 @@ def main():
                     # since it doesn't run the experiment and cannot have rid
                     # if rid is not None:
                     #     write_results()
-
+                    pass
                 put_completed()
             elif action == "examine":
                 examine(ExamineDeviceMgr, ExamineDatasetMgr, obj["file"])
