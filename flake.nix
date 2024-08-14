@@ -108,14 +108,14 @@
 
       llvmlite-new = pkgs.python3Packages.buildPythonPackage rec {
         pname = "llvmlite";
-        version = "0.40.1";
+        version = "0.43.0";
         src = pkgs.fetchFromGitHub {
             owner = "numba";
             repo = "llvmlite";
             rev = "v${version}";
-            sha256 = "sha256-gPEda9cMEsruvBt8I2VFfsTKZaPsNDgqx2Y9n0MSc4Y=";
+            sha256 = "sha256-5QBSRDb28Bui9IOhGofj+c7Rk7J5fNv5nPksEPY/O5o=";
           };
-        nativeBuildInputs = [ pkgs.llvm_14 ];
+        nativeBuildInputs = [ pkgs.llvm_15 ];
         # Disable static linking
         # https://github.com/numba/llvmlite/issues/93
         postPatch = ''
@@ -124,7 +124,7 @@
         '';
         # Set directory containing llvm-config binary
         preConfigure = ''
-          export LLVM_CONFIG=${pkgs.llvm_14.dev}/bin/llvm-config
+          export LLVM_CONFIG=${pkgs.llvm_15.dev}/bin/llvm-config
         '';
       };
 
@@ -141,7 +141,7 @@
 
         nativeBuildInputs = [ pkgs.qt5.wrapQtAppsHook ];
         # keep llvm_x and lld_x in sync with llvmlite
-        propagatedBuildInputs = [ pkgs.llvm_14 pkgs.lld_14 sipyco.packages.x86_64-linux.sipyco pythonparser llvmlite-new pkgs.qt5.qtsvg artiq-comtools.packages.x86_64-linux.artiq-comtools ]
+        propagatedBuildInputs = [ pkgs.llvm_15 pkgs.lld_15 sipyco.packages.x86_64-linux.sipyco pythonparser llvmlite-new pkgs.qt5.qtsvg artiq-comtools.packages.x86_64-linux.artiq-comtools ]
           ++ (with pkgs.python3Packages; [ pyqtgraph pygit2 numpy dateutil scipy prettytable pyserial levenshtein h5py pyqt5 qasync tqdm lmdb jsonschema ]);
 
         dontWrapQtApps = true;
@@ -164,10 +164,10 @@
           "--set FONTCONFIG_FILE ${pkgs.fontconfig.out}/etc/fonts/fonts.conf"
         ];
 
-        # FIXME: automatically propagate lld_14 llvm_14 dependencies
+        # FIXME: automatically propagate lld_15 llvm_15 dependencies
         # cacert is required in the check stage only, as certificates are to be
         # obtained from system elsewhere
-        nativeCheckInputs = with pkgs; [ lld_14 llvm_14 lit outputcheck cacert ] ++ [ libartiq-support ];
+        nativeCheckInputs = with pkgs; [ lld_15 llvm_15 lit outputcheck cacert ] ++ [ libartiq-support ];
         checkPhase = ''
           python -m unittest discover -v artiq.test
 
@@ -246,9 +246,9 @@
           nativeBuildInputs = [
             (pkgs.python3.withPackages(ps: [ migen misoc (artiq.withExperimentalFeatures experimentalFeatures) ps.packaging ]))
             rust
-            pkgs.llvmPackages_14.clang-unwrapped
-            pkgs.llvm_14
-            pkgs.lld_14
+            pkgs.llvmPackages_15.clang-unwrapped
+            pkgs.llvm_15
+            pkgs.lld_15
             vivado
             rustPlatform.cargoSetupHook
           ];
@@ -307,27 +307,9 @@
           cp $src/*.bit $out/share/bscan-spi-bitstreams
           '';
         };
-        # https://docs.lambdaconcept.com/screamer/troubleshooting.html#error-contents-differ
-        openocd-fixed = pkgs.openocd.overrideAttrs(oa: {
-          version = "unstable-2021-09-15";
-          src = pkgs.fetchFromGitHub {
-            owner = "openocd-org";
-            repo = "openocd";
-            rev = "a0bd3c9924870c3b8f428648410181040dabc33c";
-            sha256 = "sha256-YgUsl4/FohfsOncM4uiz/3c6g2ZN4oZ0y5vV/2Skwqg=";
-            fetchSubmodules = true;
-          };
-          patches = [
-            (pkgs.fetchurl {
-              url = "https://git.m-labs.hk/M-Labs/nix-scripts/raw/commit/575ef05cd554c239e4cc8cb97ae4611db458a80d/artiq-fast/pkgs/openocd-jtagspi.diff";
-              sha256 = "0g3crk8gby42gm661yxdcgapdi8sp050l5pb2d0yjfic7ns9cw81";
-            })
-          ];
-          nativeBuildInputs = oa.nativeBuildInputs or [] ++ [ pkgs.autoreconfHook269 ];
-        });
       in pkgs.buildEnv {
         name = "openocd-bscanspi";
-        paths = [ openocd-fixed bscan_spi_bitstreams-pkg ];
+        paths = [ pkgs.openocd bscan_spi_bitstreams-pkg ];
       };
 
       latex-artiq-manual = pkgs.texlive.combine {
@@ -371,7 +353,7 @@
           buildInputs = with pkgs.python3Packages; [
             sphinx sphinx_rtd_theme
             sphinx-argparse sphinxcontrib-wavedrom
-          ];
+          ] ++ [ artiq-comtools.packages.x86_64-linux.artiq-comtools ];
           buildPhase = ''
             export VERSIONEER_OVERRIDE=${artiqVersion}
             export SOURCE_DATE_EPOCH=${builtins.toString self.sourceInfo.lastModified}
@@ -391,7 +373,7 @@
           buildInputs = with pkgs.python3Packages; [
             sphinx sphinx_rtd_theme
             sphinx-argparse sphinxcontrib-wavedrom
-          ] ++ [ latex-artiq-manual ];
+          ] ++ [ latex-artiq-manual artiq-comtools.packages.x86_64-linux.artiq-comtools ];
           buildPhase = ''
             export VERSIONEER_OVERRIDE=${artiq.version}
             export SOURCE_DATE_EPOCH=${builtins.toString self.sourceInfo.lastModified}
@@ -420,9 +402,9 @@
         buildInputs = [
           (pkgs.python3.withPackages(ps: with packages.x86_64-linux; [ migen misoc ps.paramiko microscope ps.packaging ] ++ artiq.propagatedBuildInputs ))
           rust
-          pkgs.llvmPackages_14.clang-unwrapped
-          pkgs.llvm_14
-          pkgs.lld_14
+          pkgs.llvmPackages_15.clang-unwrapped
+          pkgs.llvm_15
+          pkgs.lld_15
           pkgs.git
           artiq-frontend-dev-wrappers
           # To manually run compiler tests:
@@ -450,9 +432,9 @@
         buildInputs = [
           (pkgs.python3.withPackages(ps: with packages.x86_64-linux; [ migen misoc artiq ps.packaging ]))
           rust
-          pkgs.llvmPackages_14.clang-unwrapped
-          pkgs.llvm_14
-          pkgs.lld_14
+          pkgs.llvmPackages_15.clang-unwrapped
+          pkgs.llvm_15
+          pkgs.lld_15
           packages.x86_64-linux.vivado
           packages.x86_64-linux.openocd-bscanspi
         ];
@@ -485,8 +467,8 @@
 
           buildInputs = [
             (pkgs.python3.withPackages(ps: with packages.x86_64-linux; [ artiq ps.paramiko ]))
-            pkgs.llvm_14
-            pkgs.lld_14
+            pkgs.llvm_15
+            pkgs.lld_15
             pkgs.openssh
             packages.x86_64-linux.openocd-bscanspi  # for the bscanspi bitstreams
           ];

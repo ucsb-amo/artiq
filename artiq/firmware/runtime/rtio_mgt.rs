@@ -119,17 +119,19 @@ pub mod drtio {
             },
             // (potentially) routable packets
             drtioaux::Packet::DmaAddTraceRequest      { destination, .. } |
-                drtioaux::Packet::DmaAddTraceReply        { destination, .. } |
-                drtioaux::Packet::DmaRemoveTraceRequest   { destination, .. } |
-                drtioaux::Packet::DmaRemoveTraceReply     { destination, .. } |
-                drtioaux::Packet::DmaPlaybackRequest      { destination, .. } |
-                drtioaux::Packet::DmaPlaybackReply        { destination, .. } |
-                drtioaux::Packet::SubkernelLoadRunRequest { destination, .. } |
-                drtioaux::Packet::SubkernelLoadRunReply   { destination, .. } |
-                drtioaux::Packet::SubkernelMessage        { destination, .. } |
-                drtioaux::Packet::SubkernelMessageAck     { destination, .. } |
-                drtioaux::Packet::DmaPlaybackStatus       { destination, .. } |
-                drtioaux::Packet::SubkernelFinished       { destination, .. } => {
+                drtioaux::Packet::DmaAddTraceReply          { destination, .. } |
+                drtioaux::Packet::DmaRemoveTraceRequest     { destination, .. } |
+                drtioaux::Packet::DmaRemoveTraceReply       { destination, .. } |
+                drtioaux::Packet::DmaPlaybackRequest        { destination, .. } |
+                drtioaux::Packet::DmaPlaybackReply          { destination, .. } |
+                drtioaux::Packet::SubkernelLoadRunRequest   { destination, .. } |
+                drtioaux::Packet::SubkernelLoadRunReply     { destination, .. } |
+                drtioaux::Packet::SubkernelMessage          { destination, .. } |
+                drtioaux::Packet::SubkernelMessageAck       { destination, .. } |
+                drtioaux::Packet::SubkernelExceptionRequest { destination, .. } |
+                drtioaux::Packet::SubkernelException        { destination, .. } |
+                drtioaux::Packet::DmaPlaybackStatus         { destination, .. } |
+                drtioaux::Packet::SubkernelFinished         { destination, .. } => {
                 if *destination == 0 {
                     false
                 } else {
@@ -612,9 +614,9 @@ pub mod drtio {
         let mut remote_data: Vec<u8> = Vec::new();
         loop {
             let reply = aux_transact(io, aux_mutex, ddma_mutex, subkernel_mutex, routing_table, linkno, 
-                &drtioaux::Packet::SubkernelExceptionRequest { destination: destination })?;
+                &drtioaux::Packet::SubkernelExceptionRequest { source: 0, destination: destination })?;
             match reply {
-                drtioaux::Packet::SubkernelException { last, length, data } => { 
+                drtioaux::Packet::SubkernelException { destination: 0, last, length, data } => { 
                     remote_data.extend(&data[0..length as usize]);
                     if last {
                         return Ok(remote_data);
@@ -710,11 +712,30 @@ fn read_device_map() -> DeviceMap {
     device_map
 }
 
+fn toggle_sed_spread(val: u8) {
+    unsafe { csr::rtio_core::sed_spread_enable_write(val); }
+}
+
+fn setup_sed_spread() {
+    config::read_str("sed_spread_enable", |r| {
+        match r {
+            Ok("1") => { info!("SED spreading enabled"); toggle_sed_spread(1); },
+            Ok("0") => { info!("SED spreading disabled"); toggle_sed_spread(0); },
+            Ok(_) => { 
+                warn!("sed_spread_enable value not supported (only 1, 0 allowed), disabling by default");
+                toggle_sed_spread(0);
+            },
+            Err(_) => { info!("SED spreading disabled by default"); toggle_sed_spread(0) },
+        }
+    });
+}
+
 pub fn startup(io: &Io, aux_mutex: &Mutex,
         routing_table: &Urc<RefCell<drtio_routing::RoutingTable>>,
         up_destinations: &Urc<RefCell<[bool; drtio_routing::DEST_COUNT]>>,
         ddma_mutex: &Mutex, subkernel_mutex: &Mutex) {
     set_device_map(read_device_map());
+    setup_sed_spread();
     drtio::startup(io, aux_mutex, routing_table, up_destinations, ddma_mutex, subkernel_mutex);
     unsafe {
         csr::rtio_core::reset_phy_write(1);

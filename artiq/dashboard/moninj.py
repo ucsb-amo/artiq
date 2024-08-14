@@ -348,7 +348,7 @@ class _DACWidget(QtWidgets.QFrame):
         grid.setHorizontalSpacing(0)
         grid.setVerticalSpacing(0)
         self.setLayout(grid)
-        label = QtWidgets.QLabel("{} ch{}".format(title, channel))
+        label = QtWidgets.QLabel("{}_ch{}".format(title, channel))
         label.setAlignment(QtCore.Qt.AlignCenter)
         grid.addWidget(label, 1, 1)
 
@@ -373,7 +373,7 @@ class _DACWidget(QtWidgets.QFrame):
         return (self.title, self.channel)
 
     def to_model_path(self):
-        return "dac/{} ch{}".format(self.title, self.channel)
+        return "dac/{}_ch{}".format(self.title, self.channel)
 
 
 _WidgetDesc = namedtuple("_WidgetDesc", "uid comment cls arguments")
@@ -391,8 +391,6 @@ def setup_from_ddb(ddb):
                 comment = v.get("comment")
                 if v["type"] == "local":
                     if v["module"] == "artiq.coredevice.ttl":
-                        if "ttl_urukul" in k:
-                            continue
                         channel = v["arguments"]["channel"]
                         force_out = v["class"] == "TTLOut"
                         widget = _WidgetDesc(k, comment, _TTLWidget, (channel, force_out, k))
@@ -861,9 +859,10 @@ class _MonInjDock(QDockWidgetCloseDetect):
 
     def delete_widget(self, index, checked):
         widget = self.flow.itemAt(index).widget()
-        widget.hide()
         self.manager.dm.setup_monitoring(False, widget)
         self.flow.layout.takeAt(index)
+        widget.setParent(self.manager.main_window)
+        widget.hide()
 
     def add_channels(self):
         channels = self.channel_dialog.channels
@@ -871,9 +870,9 @@ class _MonInjDock(QDockWidgetCloseDetect):
 
     def layout_widgets(self, widgets):
         for widget in sorted(widgets, key=lambda w: w.sort_key()):
-            widget.show()
             self.manager.dm.setup_monitoring(True, widget)
             self.flow.addWidget(widget)
+            widget.show()
 
     def restore_widgets(self):
         if self.widget_uids is not None:
@@ -948,7 +947,7 @@ class MonInj:
         del self.docks[name]
         self.update_closable()
         dock.delete_all_widgets()
-        dock.hide()  # dock may be parent, only delete on exit
+        dock.deleteLater()
 
     def update_closable(self):
         flags = (QtWidgets.QDockWidget.DockWidgetMovable |
